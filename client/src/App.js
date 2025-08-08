@@ -1,25 +1,60 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import CaptivePortal from './components/CaptivePortal';
+import AdminLogin from './components/AdminLogin';
+import UserDashboard from './components/UserDashboard';
+import AdminDashboard from './components/AdminDashboard';
+import LoadingSpinner from './components/LoadingSpinner';
 
-function App() {
+// Protected Route Component
+const ProtectedRoute = ({ children, requireAdmin = false }) => {
+  const { user, admin, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <LoadingSpinner size="lg" text="Loading..." />
+      </div>
+    );
+  }
+
+  if (requireAdmin) {
+    return admin ? children : <Navigate to="/admin/login" replace />;
+  }
+
+  return user ? children : <Navigate to="/" replace />;
+};
+
+// Main App Component
+const AppContent = () => {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<CaptivePortal />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/dashboard" element={
+          <ProtectedRoute requireAdmin={true}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </Router>
   );
-}
+};
+
+// Root App Component with Auth Provider
+const App = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
+  );
+};
 
 export default App;
